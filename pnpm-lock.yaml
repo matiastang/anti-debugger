@@ -39,6 +39,9 @@ importers:
       '@vue/eslint-config-prettier':
         specifier: ^9.0.0
         version: 9.0.0(eslint@9.7.0)(prettier@3.3.3)
+      anti-debugger:
+        specifier: ^0.1.0
+        version: 0.1.0
       eslint:
         specifier: ^9.7.0
         version: 9.7.0
@@ -640,6 +643,9 @@ packages:
   ansi-wrap@0.1.0:
     resolution: {integrity: sha512-ZyznvL8k/FZeQHr2T6LzcJ/+vBApDnMNZvfVFy3At0knswWd6rJ3/0Hhmpu8oqa6C92npmozs890sX9Dl6q+Qw==}
     engines: {node: '>=0.10.0'}
+
+  anti-debugger@0.1.0:
+    resolution: {integrity: sha512-5Q9E8LrotaK8R9VFn1CZ2hSUHUz/jHNQaIMxSR40hrYQP5FHhwbfk4rvYuALr0zTFdW3vrMDssQWk4511VVRng==, tarball: https://registry.npmjs.org/anti-debugger/-/anti-debugger-0.1.0.tgz}
 
   anymatch@2.0.0:
     resolution: {integrity: sha512-5teOsQWABXHHBFP9y3skS5P3d/WfWXpv3FUpy+LorMrNYaT9pI4oLMQX7jzQ2KklNpGpWHzdCXTDT2Y3XGlZBw==}
@@ -3035,6 +3041,10 @@ snapshots:
       color-convert: 2.0.1
 
   ansi-wrap@0.1.0: {}
+
+  anti-debugger@0.1.0:
+    dependencies:
+      devtools-detect: 4.0.2
 
   anymatch@2.0.0:
     dependencies:

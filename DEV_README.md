@@ -2,7 +2,7 @@
  * @Author: matiastang
  * @Date: 2024-07-15 14:13:28
  * @LastEditors: matiastang
- * @LastEditTime: 2024-07-15 16:55:08
+ * @LastEditTime: 2024-07-15 17:06:39
  * @FilePath: /anti-debugger/DEV_README.md
  * @Description: DEV_README
 -->
@@ -43,8 +43,27 @@ $ ln -s ~/matias/MT/MTGithub/npm/anti-debugger/dist anti-debugger
 
 ### 发版/更新
 
+未设置二次验证，可如下发布：
 ```sh
 $ pnpm run plugin:build:push:npm:package
+```
+
+由于设置了二次验证，需要传入`TOTP`，所以不能使用上面的自动发布了。
+* 打包
+```sh
+$ pnpm run plugin:build
+```
+* 切换到`npm`源。(如果就是`npm`源，则可以忽略)
+```sh
+$ nrm use npm
+```
+* 发布
+```sh
+$ npm publish --otp=******
+```
+* 切换回原来的源。(如果之前就是`npm`源，则可以忽略)
+```sh
+nrm use cnpmmirror
 ```
 
 ## 依赖文件

@@ -1,7 +1,7 @@
 /*
  * @Author: your name
  * @Date: 2021-10-15 17:10:16
- * @LastEditTime: 2024-07-15 15:22:31
+ * @LastEditTime: 2024-07-15 17:07:07
  * @LastEditors: matiastang
  * @Description: In User Settings Edit
  * @FilePath: /anti-debugger/src/main.ts
@@ -11,7 +11,8 @@ import App from '@/App.vue'
 import router from '@/router'
 import _package from '../package.json'
 // 本地反调试导入
-import antiDebugger from './antiDebugger'
+// import antiDebugger from './antiDebugger'
+import antiDebugger from 'anti-debugger'
 
 const app = createApp(App)
 
