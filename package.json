@@ -1,33 +1,76 @@
 {
-  "name": "anti-debugger",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "dev": "vite"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "^7.16.0",
-    "@typescript-eslint/parser": "^7.16.0",
-    "@vitejs/plugin-vue": "^5.0.5",
-    "@vue/eslint-config-prettier": "^9.0.0",
-    "eslint": "^9.7.0",
-    "eslint-plugin-prettier": "^5.1.3",
-    "less": "^4.2.0",
-    "less-loader": "^12.2.0",
-    "path": "^0.12.7",
-    "rollup": "^4.18.1",
-    "rollup-plugin-terser": "^7.0.2",
-    "typescript": "^5.5.3",
-    "vite": "^5.3.3",
-    "vite-plugin-compression": "^0.5.1",
-    "vue": "^3.4.31",
-    "vue-router": "^4.4.0"
-  },
-  "dependencies": {
-    "devtools-detect": "^4.0.2"
-  }
+    "name": "anti-debugger",
+    "version": "0.1.0",
+    "description": "Web反调试工具",
+    "main": "./dist/index.umd.js",
+    "files": [
+        "dist"
+    ],
+    "module": "./dist/index.es.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "import": "./dist/index.es.js",
+            "require": "./dist/index.umd.js"
+        }
+    },
+    "scripts": {
+        "dev": "vite",
+        "ts:build": "tsc --build src/antiDebugger/tsconfig.json",
+        "build": "vite --config vite.build.config.ts build --mode production",
+        "cp:type": "cp src/antiDebugger/buildTypes/index.d.ts dist && cp src/antiDebugger/buildTypes/throttle.d.ts dist && cp src/antiDebugger/buildTypes/task.d.ts dist",
+        "plugin:build": "pnpm run ts:build && pnpm run build && pnpm run cp:type",
+        "push:npm:package": "gulp versionPatch && gulp npmPackagePush",
+        "plugin:build:push:npm:package": "pnpm run plugin:build && pnpm run push:npm:package"
+    },
+    "keywords": [
+        "matias",
+        "matiastang",
+        "anti-debugger"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/matiastang/anti-debugger.git"
+    },
+    "author": {
+        "name": "matiastang",
+        "email": "matiastang@163.com"
+    },
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/matiastang/anti-debugger/issues"
+    },
+    "homepage": "https://github.com/matiastang/anti-debugger#readme",
+    "devDependencies": {
+        "@types/gulp": "^4.0.17",
+        "@types/gulp-bump": "^2.8.6",
+        "@types/minimist": "^1.2.5",
+        "@types/node": "^20.14.10",
+        "@types/shelljs": "^0.8.15",
+        "@typescript-eslint/eslint-plugin": "^7.16.0",
+        "@typescript-eslint/parser": "^7.16.0",
+        "@vitejs/plugin-vue": "^5.0.5",
+        "@vue/eslint-config-prettier": "^9.0.0",
+        "eslint": "^9.7.0",
+        "eslint-plugin-prettier": "^5.1.3",
+        "gulp": "4",
+        "gulp-bump": "^3.2.0",
+        "less": "^4.2.0",
+        "less-loader": "^12.2.0",
+        "minimist": "^1.2.8",
+        "path": "^0.12.7",
+        "rollup": "^4.18.1",
+        "rollup-plugin-terser": "^7.0.2",
+        "shelljs": "^0.8.5",
+        "ts-node": "^10.9.2",
+        "tslib": "^2.6.3",
+        "typescript": "^5.5.3",
+        "vite": "^5.3.3",
+        "vite-plugin-compression": "^0.5.1",
+        "vue": "^3.4.31",
+        "vue-router": "^4.4.0"
+    },
+    "dependencies": {
+        "devtools-detect": "^4.0.2"
+    }
 }
