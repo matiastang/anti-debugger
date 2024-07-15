@@ -22,7 +22,7 @@ app.use(router)
 app.mount('#app')
 
 // 反调试
-// antiDebugging()
+// antiDebugger()
 
 // 定义调试KEY
 antiDebugger({
@@ -30,7 +30,7 @@ antiDebugger({
 })
 
 // 所有参数
-// antiDebugging({
+// antiDebugger({
 //     /**
 //      * 轮询时间, 默认1000
 //      */

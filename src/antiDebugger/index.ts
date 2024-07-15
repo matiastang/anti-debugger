@@ -2,7 +2,7 @@
  * @Author: matiastang
  * @Date: 2024-04-29 09:43:40
  * @LastEditors: matiastang
- * @LastEditTime: 2024-07-15 15:26:11
+ * @LastEditTime: 2024-07-15 16:36:06
  * @FilePath: /anti-debugger/src/antiDebugger/index.ts
  * @Description: Anti-debugging
  */

@@ -2,13 +2,19 @@
  * @Author: matiastang
  * @Date: 2024-07-15 14:13:28
  * @LastEditors: matiastang
- * @LastEditTime: 2024-07-15 15:59:41
+ * @LastEditTime: 2024-07-15 16:32:50
  * @FilePath: /anti-debugger/DEV_README.md
  * @Description: DEV_README
 -->
 # anti-debugger
 
-Web anti-debugger tool
+`Web`反调试工具
+
+## 发版/更新
+
+```sh
+$ plugin:build:push:npm:package
+```
 
 ## 依赖文件
 

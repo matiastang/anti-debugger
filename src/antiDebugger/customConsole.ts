@@ -2,7 +2,7 @@
  * @Author: matiastang
  * @Date: 2024-04-29 15:19:02
  * @LastEditors: matiastang
- * @LastEditTime: 2024-07-15 15:18:35
+ * @LastEditTime: 2024-07-15 16:36:01
  * @FilePath: /anti-debugger/src/antiDebugger/customConsole.ts
  * @Description: 自定义日志
  */

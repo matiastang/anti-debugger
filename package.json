@@ -18,7 +18,8 @@
         "dev": "vite",
         "ts:build": "tsc --build src/antiDebugger/tsconfig.json",
         "build": "vite --config vite.build.config.ts build --mode production",
-        "cp:type": "cp src/antiDebugger/buildTypes/index.d.ts dist && cp src/antiDebugger/buildTypes/throttle.d.ts dist && cp src/antiDebugger/buildTypes/task.d.ts dist",
+        "cp:types": "cp -r src/antiDebugger/buildTypes dist/",
+        "cp:type": "cp src/antiDebugger/buildTypes/index.d.ts dist",
         "plugin:build": "pnpm run ts:build && pnpm run build && pnpm run cp:type",
         "push:npm:package": "gulp versionPatch && gulp npmPackagePush",
         "plugin:build:push:npm:package": "pnpm run plugin:build && pnpm run push:npm:package"
@@ -36,7 +37,7 @@
         "name": "matiastang",
         "email": "matiastang@163.com"
     },
-    "license": "ISC",
+    "license": "Apache 2.0",
     "bugs": {
         "url": "https://github.com/matiastang/anti-debugger/issues"
     },

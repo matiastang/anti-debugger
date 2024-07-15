@@ -2,7 +2,7 @@
  * @Author: matiastang
  * @Date: 2021-11-12 11:42:05
  * @LastEditors: matiastang
- * @LastEditTime: 2024-07-15 15:19:51
+ * @LastEditTime: 2024-07-15 16:36:11
  * @FilePath: /anti-debugger/src/antiDebugger/localStorageUtil.ts
  * @Description: LocalStorage简单封装
  */
