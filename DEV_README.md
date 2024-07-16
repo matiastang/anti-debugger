@@ -2,7 +2,7 @@
  * @Author: matiastang
  * @Date: 2024-07-15 14:13:28
  * @LastEditors: matiastang
- * @LastEditTime: 2024-07-15 17:06:39
+ * @LastEditTime: 2024-07-16 13:50:22
  * @FilePath: /anti-debugger/DEV_README.md
  * @Description: DEV_README
 -->
@@ -21,6 +21,7 @@
     "cp:type": "cp src/antiDebugger/buildTypes/index.d.ts dist",
     "plugin:build": "pnpm run ts:build && pnpm run build && pnpm run cp:type",
     "push:npm:package": "gulp versionPatch && gulp npmPackagePush",
+    "updata:package": "npm publish --registry https://registry.npmjs.org",
     "plugin:build:push:npm:package": "pnpm run plugin:build && pnpm run push:npm:package"
 }
 ```
@@ -43,10 +44,14 @@ $ ln -s ~/matias/MT/MTGithub/npm/anti-debugger/dist anti-debugger
 
 ### 发版/更新
 
+#### 方式一
+
 未设置二次验证，可如下发布：
 ```sh
 $ pnpm run plugin:build:push:npm:package
 ```
+
+#### 方式二
 
 由于设置了二次验证，需要传入`TOTP`，所以不能使用上面的自动发布了。
 * 打包
@@ -64,6 +69,13 @@ $ npm publish --otp=******
 * 切换回原来的源。(如果之前就是`npm`源，则可以忽略)
 ```sh
 nrm use cnpmmirror
+```
+
+#### 方式三
+
+打包流程是一样的，发布的时候使用如下命令发布，这样省去切换源的麻烦
+```sh
+$ npm publish --registry https://registry.npmjs.org --otp=******
 ```
 
 ## 依赖文件

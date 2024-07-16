@@ -22,6 +22,7 @@
         "cp:type": "cp src/antiDebugger/buildTypes/index.d.ts dist",
         "plugin:build": "pnpm run ts:build && pnpm run build && pnpm run cp:type",
         "push:npm:package": "gulp versionPatch && gulp npmPackagePush",
+        "updata:package": "npm publish --registry https://registry.npmjs.org",
         "plugin:build:push:npm:package": "pnpm run plugin:build && pnpm run push:npm:package"
     },
     "keywords": [
