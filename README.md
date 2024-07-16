@@ -2,7 +2,7 @@
  * @Author: matiastang
  * @Date: 2024-07-15 14:13:28
  * @LastEditors: matiastang
- * @LastEditTime: 2024-07-15 16:40:08
+ * @LastEditTime: 2024-07-16 14:56:11
  * @FilePath: /anti-debugger/README.md
  * @Description: README
 -->
@@ -12,8 +12,17 @@
 
 ## 安装
 
+* `pnpm`
 ```sh
 $ pnpm add -D anti-debugger
+```
+* `yarn`
+```sh
+$ yarn add -D anti-debugger
+```
+* `npm`
+```sh
+$ npm install -D anti-debugger
 ```
 
 ## 使用
@@ -33,3 +42,11 @@ antiDebugger({
   deactivateDebugger: true,
 })
 ```
+
+**提示** 更多参数请自行查找
+
+## 更新说明
+
+### 0.1.0
+
+* 实现基本的反调试功能

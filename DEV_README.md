@@ -2,7 +2,7 @@
  * @Author: matiastang
  * @Date: 2024-07-15 14:13:28
  * @LastEditors: matiastang
- * @LastEditTime: 2024-07-16 13:50:22
+ * @LastEditTime: 2024-07-16 14:47:58
  * @FilePath: /anti-debugger/DEV_README.md
  * @Description: DEV_README
 -->
@@ -99,6 +99,8 @@ $ npm publish --registry https://registry.npmjs.org --otp=******
 * `less`、`less-loader`样式
 * `ts-node`、`tslib`、`@types/node`
 * `gulp`、`@types/gulp`、`shelljs`、`@types/shelljs`、`minimist`、`@types/minimist`、`gulp-bump`、`@types/gulp-bump`。`gulp`相关
+
+`gulp`只能安装第`4`版
 ```sh
 $ pnpm add -D gulp@4
 $ pnpm add -D --ignore-scripts gulp@4
