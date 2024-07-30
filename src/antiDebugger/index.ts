@@ -2,13 +2,14 @@
  * @Author: matiastang
  * @Date: 2024-04-29 09:43:40
  * @LastEditors: matiastang
- * @LastEditTime: 2024-07-15 16:36:06
+ * @LastEditTime: 2024-07-30 17:48:59
  * @FilePath: /anti-debugger/src/antiDebugger/index.ts
  * @Description: Anti-debugging
  */
 import devtools from 'devtools-detect'
 import breakpoint from './breakpoint'
 import customConsole, { ConsoleType } from './customConsole'
+import { performanceCheckerIsOpen } from './checkers/performanceChecker'
 
 /**
  * 配置
@@ -151,7 +152,12 @@ const devtoolsOpen = () => {
         return
     }
     const startTime = Date.now()
-    breakpoint()
+    try {
+        breakpoint()
+    } catch (error) {
+        console.error(error)
+        return
+    }
     const endTime = Date.now()
     let maxDiff = NORMAL_DIFF
     if (typeof dbDiff === 'number' && dbDiff > 0) {
@@ -184,11 +190,20 @@ const devtoolsOpen = () => {
  * @returns
  */
 window.addEventListener('devtoolschange', (event) => {
-    const isOpen = event.detail.isOpen
+    console.log(event)
+    const isOpen = event.detail.isOpen || event.eventPhase === 0
+    console.log(event.detail.isOpen, event.eventPhase)
     options.devtoolsStatus = isOpen
     devConsole(`devtools status：${isOpen}`)
     const { devtoolsChange } = options
     if (isOpen) {
+        setIntervalTime()
+        devtoolsChange && devtoolsChange(true)
+        return
+    }
+    const isPerformanceOpen = performanceCheckerIsOpen()
+    devConsole(`devtools performance status：${isPerformanceOpen}`)
+    if (isPerformanceOpen) {
         setIntervalTime()
         devtoolsChange && devtoolsChange(true)
         return
@@ -234,7 +249,8 @@ const getLocalStorageDebugger = (key: string) => {
  */
 const antiDebugging = (config?: AntiDebuggingConfig) => {
     options = { ...options, ...config }
-    const isOpen = devtools.isOpen
+    const isOpen = devtools.isOpen //devtools.orientation === undefined
+    console.log('isOpen', devtools.orientation)
     options.devtoolsStatus = isOpen
     const localKey = options.debuggerLocalStorageKey
     if (localKey) {
@@ -245,6 +261,13 @@ const antiDebugging = (config?: AntiDebuggingConfig) => {
     devConsole(`init devtools status：${isOpen}`)
     const { devtoolsChange } = options
     if (isOpen) {
+        setIntervalTime()
+        devtoolsChange && devtoolsChange(true)
+        return
+    }
+    const isPerformanceOpen = performanceCheckerIsOpen()
+    devConsole(`init devtools performance status：${isPerformanceOpen}`)
+    if (isPerformanceOpen) {
         setIntervalTime()
         devtoolsChange && devtoolsChange(true)
         return

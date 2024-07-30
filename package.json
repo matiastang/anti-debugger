@@ -74,6 +74,7 @@
         "vue-router": "^4.4.0"
     },
     "dependencies": {
-        "devtools-detect": "^4.0.2"
+        "devtools-detect": "^4.0.2",
+        "devtools-detector": "^2.0.20"
     }
 }
