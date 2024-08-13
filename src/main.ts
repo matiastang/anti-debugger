@@ -1,7 +1,7 @@
 /*
  * @Author: your name
  * @Date: 2021-10-15 17:10:16
- * @LastEditTime: 2024-07-30 17:49:15
+ * @LastEditTime: 2024-08-13 14:59:45
  * @LastEditors: matiastang
  * @Description: In User Settings Edit
  * @FilePath: /anti-debugger/src/main.ts
@@ -26,66 +26,66 @@ app.mount('#app')
 // antiDebugger()
 
 // 定义调试KEY
-// antiDebugger({
-//     debuggerLocalStorageKey: 'ANTI-DEBUGGER',
-// })
+antiDebugger({
+    debuggerLocalStorageKey: 'ANTI-DEBUGGER',
+})
 
 // 所有参数
-antiDebugger({
-    /**
-     * 轮询时间, 默认1000
-     */
-    timeout: 1000,
-    /**
-     * 是否立即执行一次, 默认true
-     */
-    immediate: true,
-    /**
-     * 是否开启deactivate breakpoints的判定条件, 默认100
-     * 仅正数生效
-     */
-    dbDiff: 100,
-    /**
-     * 是否输出开发日志
-     */
-    devLog: true,
-    /**
-     * 是否关闭debugger
-     */
-    deactivateDebugger: true,
-    /**
-     * localStorage中保存的是否关闭debugger key
-     * 如果传递了该值，则在localStorage中读取该值
-     * 如果该值为true，则关闭debugger
-     * 如果该值为false，则检查deactivateDebugger，决定是否关闭debugger
-     */
-    debuggerLocalStorageKey: 'ANTI-DEBUGGER',
-    /**
-     * 调试工具状态变化
-     * @param open 是否打开
-     * @returns
-     */
-    devtoolsChange: (open: boolean) => {
-        console.log(`devtools ${open ? '开启' : '关闭'}`)
-    },
-    /**
-     * deactivate breakpoints 状态变化
-     * @param open 是否打开
-     * @returns
-     */
-    breakpointsChange: (open: boolean) => {
-        console.log(`deactivate breakpoints ${open ? '开启' : '关闭'}`)
-    },
-    /**
-     * 开启 deactivate breakpoints 的处理函数
-     * 默认：window.location.replace('about:blank')
-     * @returns
-     */
-    deactivateBreakpoints: () => {
-        console.log('检查到开启：deactivate breakpoints')
-        window.location.replace('about:blank')
-    },
-})
+// antiDebugger({
+//     /**
+//      * 轮询时间, 默认1000
+//      */
+//     timeout: 1000,
+//     /**
+//      * 是否立即执行一次, 默认true
+//      */
+//     immediate: true,
+//     /**
+//      * 是否开启deactivate breakpoints的判定条件, 默认100
+//      * 仅正数生效
+//      */
+//     dbDiff: 100,
+//     /**
+//      * 是否输出开发日志
+//      */
+//     devLog: true,
+//     /**
+//      * 是否关闭debugger
+//      */
+//     deactivateDebugger: false,
+//     /**
+//      * localStorage中保存的是否关闭debugger key
+//      * 如果传递了该值，则在localStorage中读取该值
+//      * 如果该值为true，则关闭debugger
+//      * 如果该值为false，则检查deactivateDebugger，决定是否关闭debugger
+//      */
+//     debuggerLocalStorageKey: 'ANTI-DEBUGGER',
+//     /**
+//      * 调试工具状态变化
+//      * @param open 是否打开
+//      * @returns
+//      */
+//     devtoolsChange: (open: boolean) => {
+//         console.log(`devtools ${open ? '开启' : '关闭'}`)
+//     },
+//     /**
+//      * deactivate breakpoints 状态变化
+//      * @param open 是否打开
+//      * @returns
+//      */
+//     breakpointsChange: (open: boolean) => {
+//         console.log(`deactivate breakpoints ${open ? '开启' : '关闭'}`)
+//     },
+//     /**
+//      * 开启 deactivate breakpoints 的处理函数
+//      * 默认：window.location.replace('about:blank')
+//      * @returns
+//      */
+//     deactivateBreakpoints: () => {
+//         console.log('检查到开启：deactivate breakpoints')
+//         window.location.replace('about:blank')
+//     },
+// })
 
 // 打印版本信息
 const print = (key: string, value: string) =>

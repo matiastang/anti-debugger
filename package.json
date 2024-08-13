@@ -1,6 +1,6 @@
 {
     "name": "anti-debugger",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "description": "Web反调试工具",
     "main": "./dist/index.umd.js",
     "files": [

@@ -2,7 +2,7 @@
  * @Author: matiastang
  * @Date: 2024-04-29 09:43:40
  * @LastEditors: matiastang
- * @LastEditTime: 2024-07-30 17:48:59
+ * @LastEditTime: 2024-08-13 15:00:34
  * @FilePath: /anti-debugger/src/antiDebugger/index.ts
  * @Description: Anti-debugging
  */
@@ -10,6 +10,18 @@ import devtools from 'devtools-detect'
 import breakpoint from './breakpoint'
 import customConsole, { ConsoleType } from './customConsole'
 import { performanceCheckerIsOpen } from './checkers/performanceChecker'
+import { generatorLoop } from './timers/generatorLoop'
+
+/**
+ * 固定生成: 1000, 2000, 3000
+ */
+function* generatorLoopRules() {
+    let value = 1000
+    while (value <= 3000) {
+        yield value
+        value = value + 1000
+    }
+}
 
 /**
  * 配置
@@ -118,9 +130,28 @@ const devConsole = (
  */
 const setIntervalTime = (timeout?: number | undefined) => {
     clearIntervalTime()
-    options.immediate && devtoolsOpen()
-    intervalId = window.setInterval(devtoolsOpen, timeout)
-    devConsole(`setInterval：${intervalId}`)
+    // options.immediate && devtoolsOpen()
+    // intervalId = window.setInterval(devtoolsOpen, timeout)
+    // devConsole(`setInterval：${intervalId}`)
+
+    const loop = () => {
+        intervalId = window.setTimeout(() => {
+            const nextRun = devtoolsOpen()
+            if (nextRun && options.devtoolsStatus) {
+                loop()
+            } else {
+                clearIntervalTime()
+            }
+        }, timeout)
+    }
+
+    if (options.immediate) {
+        const nextRun = devtoolsOpen()
+        if (!nextRun) {
+            return
+        }
+    }
+    options.devtoolsStatus && loop()
 }
 
 /**
@@ -131,8 +162,10 @@ const clearIntervalTime = () => {
     if (typeof intervalId !== 'number') {
         return
     }
-    devConsole(`clearInterval：${intervalId}`)
-    intervalId && window.clearInterval(intervalId)
+    // devConsole(`clearInterval：${intervalId}`)
+    // intervalId && window.clearInterval(intervalId)
+    devConsole(`clearTimeout${intervalId}`)
+    intervalId && window.clearTimeout(intervalId)
     intervalId = null
 }
 
@@ -140,7 +173,7 @@ const clearIntervalTime = () => {
  * 调试工具打开时处理
  * @returns
  */
-const devtoolsOpen = () => {
+const devtoolsOpen = (): boolean => {
     const {
         dbDiff,
         deactivateDebugger,
@@ -149,14 +182,14 @@ const devtoolsOpen = () => {
         deactivateBreakpoints,
     } = options
     if (deactivateDebugger) {
-        return
+        return true
     }
     const startTime = Date.now()
     try {
         breakpoint()
     } catch (error) {
         console.error(error)
-        return
+        return true
     }
     const endTime = Date.now()
     let maxDiff = NORMAL_DIFF
@@ -169,7 +202,7 @@ const devtoolsOpen = () => {
             options.breakpointStatus = false
             breakpointsChange && breakpointsChange(false)
         }
-        return
+        return true
     }
     if (!breakpointStatus) {
         devConsole('breakpointStatus：false->true')
@@ -177,10 +210,19 @@ const devtoolsOpen = () => {
         breakpointsChange && breakpointsChange(true)
     }
     if (deactivateBreakpoints) {
-        deactivateBreakpoints()
-        return
+        setTimeout(() => {
+            if (options.devtoolsStatus) {
+                deactivateBreakpoints()
+            }
+        }, 800)
+        return false
     }
-    window.location.replace('about:blank')
+    setTimeout(() => {
+        if (options.devtoolsStatus) {
+            window.location.replace('about:blank')
+        }
+    }, 800)
+    return false
 }
 
 /**
@@ -190,9 +232,9 @@ const devtoolsOpen = () => {
  * @returns
  */
 window.addEventListener('devtoolschange', (event) => {
-    console.log(event)
+    // console.log(event)
     const isOpen = event.detail.isOpen || event.eventPhase === 0
-    console.log(event.detail.isOpen, event.eventPhase)
+    // console.log(event.detail.isOpen, event.eventPhase)
     options.devtoolsStatus = isOpen
     devConsole(`devtools status：${isOpen}`)
     const { devtoolsChange } = options
@@ -201,13 +243,16 @@ window.addEventListener('devtoolschange', (event) => {
         devtoolsChange && devtoolsChange(true)
         return
     }
-    const isPerformanceOpen = performanceCheckerIsOpen()
+    const { devLog } = options
+    const isPerformanceOpen = performanceCheckerIsOpen(!devLog)
     devConsole(`devtools performance status：${isPerformanceOpen}`)
     if (isPerformanceOpen) {
+        options.devtoolsStatus = true
         setIntervalTime()
         devtoolsChange && devtoolsChange(true)
         return
     }
+    options.devtoolsStatus = false
     clearIntervalTime()
     devtoolsChange && devtoolsChange(false)
 })
@@ -250,7 +295,7 @@ const getLocalStorageDebugger = (key: string) => {
 const antiDebugging = (config?: AntiDebuggingConfig) => {
     options = { ...options, ...config }
     const isOpen = devtools.isOpen //devtools.orientation === undefined
-    console.log('isOpen', devtools.orientation)
+    // console.log('isOpen', devtools.orientation)
     options.devtoolsStatus = isOpen
     const localKey = options.debuggerLocalStorageKey
     if (localKey) {
@@ -265,14 +310,27 @@ const antiDebugging = (config?: AntiDebuggingConfig) => {
         devtoolsChange && devtoolsChange(true)
         return
     }
-    const isPerformanceOpen = performanceCheckerIsOpen()
-    devConsole(`init devtools performance status：${isPerformanceOpen}`)
-    if (isPerformanceOpen) {
-        setIntervalTime()
-        devtoolsChange && devtoolsChange(true)
-        return
-    }
     devtoolsChange && devtoolsChange(false)
+    // 测试是否Undock
+    const devLog = options.devLog
+    generatorLoop(
+        generatorLoopRules(),
+        () => {
+            const isPerformanceOpen = performanceCheckerIsOpen(!devLog)
+            devConsole(`init devtools performance status：${isPerformanceOpen}`)
+            if (isPerformanceOpen) {
+                options.devtoolsStatus = true
+                setIntervalTime()
+                devtoolsChange && devtoolsChange(true)
+                return false
+            }
+            return true
+        },
+        {
+            immediate: false,
+            devLog: true,
+        }
+    )
 }
 
 export default antiDebugging
