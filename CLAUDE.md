@@ -10,7 +10,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 -   没有测试框架；代码规范由 `eslint.config.mjs`（ESLint 9 flat config）+ `.prettierrc` 约束（4 空格缩进、无分号、单引号；package.json 例外为 2 空格）
 -   提交信息风格：`feat: - xxx` / `fix: - xxx`（见 git 历史）
 -   pre-commit 钩子（husky + lint-staged）对暂存文件自动跑 `prettier --write` + `eslint --fix`
--   GitHub Actions（`.github/workflows/ci.yml`）：push 到 main 或 PR 到 main 时跑 format:check / lint / typecheck / plugin:build
+-   GitHub Actions（`.github/workflows/ci.yml`）：push 到 main 或 PR 到 main 时跑 format:check / lint / typecheck / test / plugin:build + 独立 E2E job（xvfb 有头浏览器）
 
 ## 常用命令
 
@@ -22,10 +22,17 @@ pnpm run dev
 pnpm run plugin:build
 
 # 校验（CI 同款）
-pnpm lint          # ESLint（flat config）
-pnpm typecheck     # vue-tsc 全量类型检查（含 .vue）
-pnpm format:check  # Prettier 格式检查
-pnpm format        # Prettier 全量格式化
+pnpm lint            # ESLint（flat config）
+pnpm typecheck       # vue-tsc 全量类型检查（含 .vue 与 spec 文件）
+pnpm typecheck:e2e   # e2e/ 与 playwright/vitest 配置的类型检查
+pnpm format:check    # Prettier 格式检查
+pnpm format          # Prettier 全量格式化
+
+# 测试
+pnpm test            # Vitest 单元 + 集成测试（src/**/__tests__/*.spec.ts）
+pnpm test:watch      # Vitest watch 模式
+pnpm test:coverage   # 覆盖率报告（v8 provider）
+pnpm test:e2e        # Playwright E2E（自动拉起 dev server，需要有头浏览器）
 
 # 仅生成 .d.ts 类型文件（输出到 src/antiDebugger/buildTypes/）
 pnpm run ts:build
@@ -73,3 +80,23 @@ npm publish --registry https://registry.npmjs.org --otp=******
 -   `gulpfile.ts/` 是目录（不是文件），内含 gulp 任务：版本号 bump（`versionPatch` 等）、git 提交（`git_feat -m '...'`）、npm 发布。仅 `push:npm:package` 无人值守流程使用，日常发布走上面的手动命令。
 -   **ESLint flat config 的两个坑**（`eslint.config.mjs`）：① 不能用 `tseslint.config()` 包裹配置数组（v7 与 eslint-plugin-vue v10 的配置形态不兼容，会导致 .vue 文件配置匹配失效）；② .vue 文件必须显式设置 `parser: vueParser`，否则 tseslint 的全局 base 配置会用 ts 解析器解析整个 .vue（含 template）导致 `Parsing error: Type expected`。
 -   pnpm 10 默认拦截依赖构建脚本，`package.json` 的 `pnpm.onlyBuiltDependencies` 已放行 esbuild（vite 依赖其二进制）。
+
+## 测试架构
+
+四层测试（详见方案沉淀在各 spec 文件头注释）：
+
+-   **单元**（`src/**/__tests__/*.spec.ts`，Vitest + happy-dom + fake timers）：localStorageUtil、customConsole、breakpoint、两个 generatorLoop、performanceChecker。
+-   **集成/状态机**（`src/antiDebugger/__tests__/antiDebugging.spec.ts`）：合成 `devtoolschange` CustomEvent 驱动全路径。关键 mock 模式：
+    -   `devtools-detect` 必须**整体模块 mock**（真实包 import 即启动不可停止的 500ms 轮询，且事件与导出对象是两条独立通道）
+    -   `index.ts` 是模块级单例 + import 即注册 window 监听 → 每用例 `vi.resetModules()` + 动态 import + spy 捕获/清理监听器
+    -   `stubBrowserStyleTimers()` 把 fake timers 的 object id 包装为浏览器式 number id（源码 `clearIntervalTime` 有 `typeof !== 'number'` 守卫，否则清理被短路）
+    -   happy-dom 的 `eventPhase` dispatch 期间恒为 0，close 事件需对实例 `defineProperty(eventPhase, 2)` 遮蔽
+-   **E2E**（`e2e/anti-debugger.spec.ts`，Playwright 双 project）：`chromium-clean` 基线 + CDP 确定性用例；`chromium-devtools`（`--auto-open-devtools-for-tabs`）真实冻结验证。坑：真实 DevTools 前端占有 pause 所有权，CDP resume 不可靠，所以"断点失活惩罚"用例在 clean project 用 viewport 收缩触发宽度阈值 + CDP 独占调试器。
+-   **CI**：`check` job 跑单测；`e2e` job 用 `xvfb-run` 跑有头浏览器。
+
+## 已知源码行为（测试记录的真实行为，部分疑似 bug 待定夺）
+
+-   `timeout` 配置实际未传入轮询定时器：`init`/事件监听里 `setIntervalTime()` 无参调用，循环间隔为 `undefined`(=0ms)。
+-   同步版 `generatorLoop` 的 `immediate` 分支后 `ruleLoop()` 无条件调用：immediate 回调返回 false 仍会多调度一次（async 版本无此问题，行为不一致）。
+-   `performanceCheckerIsOpen` 在 console 被 instrumentation 监听时（如 Playwright）可能误判打开（E2E 干净环境下实测出现过惩罚跳转）。
+-   `generatorForeverLoopRules` 的回绕判定是 `value > max`（严格大于），序列 16000 后下一个间隔是 32000 才回绕。

@@ -33,6 +33,25 @@
 $ pnpm run dev
 ```
 
+### 测试
+
+```sh
+# 单元 + 集成测试（Vitest + happy-dom）
+$ pnpm run test
+
+# watch 模式
+$ pnpm run test:watch
+
+# 覆盖率报告（coverage/ 目录）
+$ pnpm run test:coverage
+
+# E2E（Playwright，需要有头浏览器；自动拉起 dev server）
+$ pnpm run test:e2e
+```
+
+**注意**E2E 首次运行需要先安装浏览器：`pnpm exec playwright install chromium`。
+CI 中 E2E 通过 `xvfb-run` 在虚拟显示下运行有头浏览器。
+
 ### 使用符号链接调试
 
 `node_modules`目录下执行链接

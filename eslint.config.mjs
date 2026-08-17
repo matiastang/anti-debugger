@@ -21,6 +21,9 @@ export default [
             'src/antiDebugger/buildJs/',
             'src/antiDebugger/buildTypes/',
             'public/',
+            'test-results/',
+            'playwright-report/',
+            'coverage/',
         ],
     },
     // js 基础规则

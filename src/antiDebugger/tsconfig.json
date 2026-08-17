@@ -8,7 +8,7 @@
         "esModuleInterop": true // 允许export=导出，由import from 导入
     },
     "include": ["**/*"], // 包含所有
-    "exclude": ["buildJs", "buildTypes"] // 排除输出目录
+    "exclude": ["buildJs", "buildTypes", "**/__tests__/**"] // 排除输出目录与测试（测试由根 tsconfig 的 vue-tsc 检查）
 }
 
 

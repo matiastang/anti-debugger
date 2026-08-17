@@ -6,3 +6,8 @@ build
 src/antiDebugger/buildJs
 src/antiDebugger/buildTypes
 public
+test-results
+playwright-report
+test-results
+playwright-report
+coverage
