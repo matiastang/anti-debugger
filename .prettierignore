@@ -1,2 +1,8 @@
-/node_modules/\*
-/bower_components/\*
+node_modules
+pnpm-lock.yaml
+LICENSE
+dist
+build
+src/antiDebugger/buildJs
+src/antiDebugger/buildTypes
+public

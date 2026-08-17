@@ -1,9 +1,17 @@
 {
-	"trailingComma": "es5",
-	"tabWidth": 4,
-	"useTabs": false,
-	"semi": false,
-	"singleQuote": true,
-	"endOfLine": "auto",
-	"printWidth": 100
+    "trailingComma": "es5",
+    "tabWidth": 4,
+    "useTabs": false,
+    "semi": false,
+    "singleQuote": true,
+    "endOfLine": "auto",
+    "printWidth": 100,
+    "overrides": [
+        {
+            "files": "package.json",
+            "options": {
+                "tabWidth": 2
+            }
+        }
+    ]
 }

@@ -34,7 +34,7 @@ export const generatorLoop = (
 ) => {
     const { immediate, devLog } = config
 
-    let timeoutid: any | null = null
+    let timeoutid: ReturnType<typeof setTimeout> | null = null
 
     const ruleLoop = () => {
         const rule = rules.next()

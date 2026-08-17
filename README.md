@@ -6,35 +6,43 @@
  * @FilePath: /anti-debugger/README.md
  * @Description: README
 -->
+
 # anti-debugger
 
 `Web`反调试工具
 
 ## 安装
 
-* `pnpm`
+-   `pnpm`
+
 ```sh
 $ pnpm add -D anti-debugger
 ```
-* `yarn`
+
+-   `yarn`
+
 ```sh
 $ yarn add -D anti-debugger
 ```
-* `npm`
+
+-   `npm`
+
 ```sh
 $ npm install -D anti-debugger
 ```
 
 ## 使用
 
-* 在`main.ts`中引入并开启
+-   在`main.ts`中引入并开启
+
 ```ts
 import antiDebugger from 'anti-debugger'
 
 antiDebugger()
 ```
 
-* 测试阶段可以屏蔽，推荐使用环境变量控制。
+-   测试阶段可以屏蔽，推荐使用环境变量控制。
+
 ```ts
 import antiDebugger from 'anti-debugger'
 
@@ -73,6 +81,7 @@ antiDebugger({
 **提示** `devLog`和`deactivateDebugger`最好通过环境变量设置， 更多参数请自行查找。
 
 **警告** 由于使用了`eval`，可能会收到如下提示：
+
 ```sh
 Use of eval in "****" is strongly discouraged as it poses security risks and may cause issues with minification.
 ```
@@ -81,9 +90,9 @@ Use of eval in "****" is strongly discouraged as it poses security risks and may
 
 ### v0.2.0
 
-* 添加性能分析，判断`Undock`状态。
-* 优化检测模式，引入动态时间间隔检查。
+-   添加性能分析，判断`Undock`状态。
+-   优化检测模式，引入动态时间间隔检查。
 
 ### v0.1.0
 
-* 实现基本的反调试功能
+-   实现基本的反调试功能

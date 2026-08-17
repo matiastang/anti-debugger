@@ -26,7 +26,7 @@ export interface AsyncGeneratorLoopConfig {
  */
 export const asyncGeneratorLoop = async (
     rules: Generator<number, void>,
-    callback: () => Promise<Boolean>,
+    callback: () => Promise<boolean>,
     config: AsyncGeneratorLoopConfig = {
         immediate: false,
         devLog: false,
@@ -34,7 +34,7 @@ export const asyncGeneratorLoop = async (
 ) => {
     const { immediate, devLog } = config
 
-    let timeoutid: any | null = null
+    let timeoutid: ReturnType<typeof setTimeout> | null = null
 
     const ruleLoop = () => {
         const rule = rules.next()

@@ -19,7 +19,7 @@ const npmPackagePush = async function (cb: () => void) {
         ${chooseNPM}
         ${command}
     `,
-        (error, stdout, stderr) => {
+        (error, _stdout, _stderr) => {
             if (error) {
                 console.error(`${command} 指令 exec error: ${error}`)
                 cb()
