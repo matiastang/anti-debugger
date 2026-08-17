@@ -73,9 +73,9 @@ export const generatorLoop = (
         } else {
             devLog && console.info(`[${new Date().getTime()}]: immediate call back return stop`)
         }
+    } else {
+        ruleLoop()
     }
-
-    ruleLoop()
 
     return cancel
 }
@@ -97,12 +97,17 @@ export const testGeneratorLoopRules = generatorLoopRules
  * 一直产生1000, 2000, 4000, 8000, 16000的循环序列
  * 注意，这个函数不会停止，除非你手动调用cancel函数
  */
-function* generatorForeverLoopRules(min: number = 500, max: number = 16000, multiple: number = 2) {
+export function* generatorForeverLoopRules(
+    min: number = 500,
+    max: number = 16000,
+    multiple: number = 2
+) {
     let current = min
     while (true) {
         const value = current * multiple
         yield value
-        current = value > max ? min : value
+        // 达到 max 即回绕（>=，避免超过 max 的间隔出现）
+        current = value >= max ? min : value
     }
 }
 

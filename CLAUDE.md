@@ -59,9 +59,9 @@ npm publish --registry https://registry.npmjs.org --otp=******
 
 `index.ts` 是唯一入口，导出 `antiDebugging(config)`，检测逻辑由三种机制组成：
 
-1. **devtools 开关监听**：依赖 `devtools-detect` 包的 `devtoolschange` 事件。注意：必须先读取一次 `devtools.isOpen`，事件监听才会生效。
-2. **debugger 断点计时**（`breakpoint.ts`）：执行 `eval('debugger;')` 并测量耗时。耗时超过 `dbDiff`（默认 50ms）说明断点生效（devtools 打开且暂停）；耗时极短说明用户"deactivate breakpoints"了 —— 这是恶意逆向行为，默认处置为 `window.location.replace('about:blank')`（可通过 `deactivateBreakpoints` 回调自定义）。
-3. **性能检测**（`checkers/performanceChecker.ts`）：比较 `console.table` 与 `console.log` 打印大对象数组的耗时（相差 10 倍以上判定为打开），用于检测 devtools 关闭状态（Undock 场景），弥补 `devtools-detect` 的盲区。
+1. **devtools 开关监听**：依赖 `devtools-detect` 包的 `devtoolschange` 事件。注意：必须先读取一次 `devtools.isOpen`，事件监听才会生效。close 事件先同步停轮询、再异步性能探测兜底（Undock），确认未打开才真正关闭并重启周期探测。
+2. **debugger 断点计时**（`breakpoint.ts`）：执行 `eval('debugger;')` 并测量耗时（`performance.now()` 主计时 + `Date.now()` 交叉验证防篡改）。耗时超过 `dbDiff`（默认 100ms）说明断点生效（devtools 打开且暂停），循环继续卡住；耗时极短或两时钟差值异常（篡改）说明"deactivate breakpoints"—— **立即**执行 `window.location.replace('about:blank')`（可通过 `deactivateBreakpoints` 回调自定义），无延迟窗口。
+3. **性能检测**（`checkers/performanceChecker.ts`，async）：比较 `console.table` 与 `console.log` 打印大对象数组的耗时。连续 2 轮（间隔 200ms）都满足"table > 10ms 且 > log 基线 10 倍"才判开（Chrome 151 实测标定：DevTools 打开时 table ~17-24ms，关闭时 ~0.5-2ms）；console 被 hook（非原生）时阈值提高到 50ms/20 倍。devtools 关闭期间以周期探测（间隔 1000/2000/4000 循环）持续运行，覆盖加载后才以分离窗口打开的场景。
 
 ### 定时调度（src/antiDebugger/timers/）
 
@@ -69,7 +69,7 @@ npm publish --registry https://registry.npmjs.org --otp=******
 
 ### 运行时状态
 
-`index.ts` 的模块级 `options`（`AntiDebuggingOptions`）保存全局状态（`devtoolsStatus`、`breakpointStatus` 等），`antiDebugging()` 被调用时合并配置。
+`index.ts` 的模块级 `options`（`AntiDebuggingOptions`）保存全局状态（`devtoolsStatus`、`breakpointStatus` 等）。`antiDebugging()` 重复调用会先清理上一轮轮询/探测并重置运行时状态再合并配置；default export 上挂载 `destroy()`（停止轮询与探测、移除事件监听——销毁后事件监听不会自动恢复，需刷新页面）。
 
 ## 开发注意事项
 
@@ -94,9 +94,8 @@ npm publish --registry https://registry.npmjs.org --otp=******
 -   **E2E**（`e2e/anti-debugger.spec.ts`，Playwright 双 project）：`chromium-clean` 基线 + CDP 确定性用例；`chromium-devtools`（`--auto-open-devtools-for-tabs`）真实冻结验证。坑：真实 DevTools 前端占有 pause 所有权，CDP resume 不可靠，所以"断点失活惩罚"用例在 clean project 用 viewport 收缩触发宽度阈值 + CDP 独占调试器。
 -   **CI**：`check` job 跑单测；`e2e` job 用 `xvfb-run` 跑有头浏览器。
 
-## 已知源码行为（测试记录的真实行为，部分疑似 bug 待定夺）
+## 已知边界（v0.3.0 后仍存在的架构上限）
 
--   `timeout` 配置实际未传入轮询定时器：`init`/事件监听里 `setIntervalTime()` 无参调用，循环间隔为 `undefined`(=0ms)。
--   同步版 `generatorLoop` 的 `immediate` 分支后 `ruleLoop()` 无条件调用：immediate 回调返回 false 仍会多调度一次（async 版本无此问题，行为不一致）。
--   `performanceCheckerIsOpen` 在 console 被 instrumentation 监听时（如 Playwright）可能误判打开（E2E 干净环境下实测出现过惩罚跳转）。
--   `generatorForeverLoopRules` 的回绕判定是 `value > max`（严格大于），序列 16000 后下一个间隔是 32000 才回绕。
+-   `performanceCheckerIsOpen` 对 CDP 层 console 监听（如 Playwright/自动化，不改写 console 函数本身）会判定为打开——这是合理语义（自动化本身就是附加调试器），且时序上与真实 DevTools 不可区分（实测两者 table 都 ~20ms）；真实浏览器无 DevTools 时 table ~0.5-2ms，远低于 10ms 下限，不会误判。
+-   Local Overrides / 代理改写 / 远程调试 / 静态分析等客户端方案天花板问题不在此库能力范围内。
+-   v0.3.0 已修复：`timeout` 死配置、同步 `generatorLoop` immediate 不一致、forever 回绕严格大于、800ms 惩罚竞态、Undock 延迟打开盲区、时间钩子篡改、重复初始化状态残留；并新增 `destroy()` API。

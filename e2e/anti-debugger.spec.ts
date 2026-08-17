@@ -46,7 +46,9 @@ test.describe('真实 DevTools（chromium-devtools）', () => {
     test('DevTools 打开时页面 JS 被 debugger 循环冻结', async ({ page }) => {
         await page.goto('/', { waitUntil: 'commit' })
 
-        expect(await probeAlive(page, 1500)).toBe('frozen')
+        // 真实 DevTools 下 console.table 打印本身很慢（每轮数百 ms），
+        // 两轮性能确认约在 ~3s 完成并进入冻结，心跳 4000ms 保证在冻结之后到期
+        expect(await probeAlive(page, 4000)).toBe('frozen')
     })
 
     test('localStorage ANTI-DEBUGGER=true 关闭反调试，DevTools 打开也不冻结', async ({ page }) => {
@@ -66,30 +68,41 @@ test.describe('断点失活惩罚（chromium-clean + CDP）', () => {
         test.skip(testInfo.project.name !== 'chromium-clean', '仅 clean project')
     })
 
-    test('检测开启 -> debugger 暂停 -> Deactivate breakpoints -> 惩罚跳转 about:blank', async ({
-        page,
-    }) => {
-        // 收缩 viewport 使 outerWidth - innerWidth > 170，触发 devtools-detect 的宽度阈值判定，
-        // 无需真实 DevTools UI 即可进入"已打开"状态（deterministic）
-        await page.setViewportSize({ width: 900, height: 600 })
-
+    test('检测开启 -> debugger 暂停/断点失效 -> 惩罚跳转 about:blank', async ({ page }) => {
         const cdp = await page.context().newCDPSession(page)
         // CDPSession 是 EventEmitter：先挂监听再导航，等待 debugger 语句触发暂停
         const paused = new Promise<void>((resolve) => {
             cdp.on('Debugger.paused', () => resolve())
         })
         await cdp.send('Debugger.enable')
+        // Playwright 内部会跳过所有暂停，这里恢复，使 debugger 语句可以触发 CDP 暂停
+        await cdp.send('Debugger.setSkipAllPauses', { skip: false }).catch(() => undefined)
 
-        await page.goto('/', { waitUntil: 'commit' })
+        // 等待页面脚本加载完成（监听器注册后事件才会生效）
+        await page.goto('/')
 
-        // 反调试循环启动后，debugger 语句触发 CDP 暂停（CDP 为唯一调试器客户端）
-        await Promise.race([paused, page.waitForTimeout(10_000)])
+        // 通过 devtools-detect 的公开事件契约注入"已打开"状态，触发反调试循环。
+        // 注意：dispatch 会在页面内同步走到 debugger 语句并暂停或直接快速通过（Playwright
+        // 环境下暂停可能被跳过），evaluate 可能永远不 resolve 或因惩罚跳转被销毁，因此不 await
+        void page
+            .evaluate(() => {
+                window.dispatchEvent(
+                    new CustomEvent('devtoolschange', {
+                        detail: { isOpen: true, orientation: undefined },
+                    })
+                )
+            })
+            .catch(() => undefined)
 
-        // 等价于 DevTools 中点击 "Deactivate breakpoints"，并恢复当前暂停
-        await cdp.send('Debugger.setBreakpointsActive', { active: false })
-        await cdp.send('Debugger.resume')
+        // 两种收敛路径都验证惩罚：
+        // a) debugger 暂停 -> 等价于 Deactivate breakpoints -> 恢复后快速通过 -> 惩罚
+        // b) 暂停被跳过 -> 快速通过 -> 立即惩罚
+        await Promise.race([paused, page.waitForTimeout(5_000)])
 
-        // 恢复后的下一轮检测判定"断点失效"（快速通过）-> 800ms 后惩罚跳转
+        await cdp.send('Debugger.setBreakpointsActive', { active: false }).catch(() => undefined)
+        await cdp.send('Debugger.resume').catch(() => undefined)
+
+        // 惩罚为立即执行：快速通过判定后直接跳转
         await page.waitForURL('about:blank', { timeout: 15_000 })
         expect(page.url()).toBe('about:blank')
     })

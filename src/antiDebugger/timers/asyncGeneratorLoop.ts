@@ -116,7 +116,8 @@ function* asyncGeneratorForeverLoopRules(
     while (true) {
         const value = current * multiple
         yield value
-        current = value > max ? min : value
+        // 达到 max 即回绕（>=，避免超过 max 的间隔出现）
+        current = value >= max ? min : value
     }
 }
 

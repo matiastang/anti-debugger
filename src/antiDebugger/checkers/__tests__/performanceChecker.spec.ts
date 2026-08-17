@@ -1,6 +1,9 @@
 /*
  * performanceChecker 单元测试
- * maxLogPrintTime 为模块级累积状态，用例间 resetModules + 动态 import 隔离
+ * - maxLogPrintTime 为模块级累积状态，用例间 resetModules + 动态 import 隔离
+ * - performanceCheckerIsOpen 为 async（两轮确认，间隔 200ms）
+ * - 测试环境（happy-dom/node）的 console 方法为 JS 实现，默认走"被 hook"阈值（floor 300 / ratio 20）；
+ *   通过覆盖 spy 的 toString 模拟原生 console（floor 100 / ratio 10）
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
@@ -12,85 +15,103 @@ const silence = () => {
     vi.spyOn(console, 'timeEnd').mockImplementation(() => {})
 }
 
+/** 把 console 方法伪装为原生实现（toString 含 [native code]） */
+const makeNative = () => {
+    for (const key of ['log', 'table'] as const) {
+        const spy = vi.spyOn(console, key).mockImplementation(() => {})
+        spy.toString = () => 'function () { [native code] }'
+    }
+}
+
+/**
+ * 构造 performance.now 返回队列：每轮探测消耗 4 个值（table start/end、log start/end）
+ * @param rounds 每轮的 [tableDiff, logDiff] 数组
+ */
+const perfQueue = (rounds: Array<[number, number]>) => {
+    const queue: number[] = []
+    for (const [tableDiff, logDiff] of rounds) {
+        queue.push(0, tableDiff, 100, 100 + logDiff)
+    }
+    return vi.spyOn(performance, 'now').mockImplementation(() => queue.shift() ?? 0)
+}
+
 const load = () => import('../performanceChecker')
+
+/** 运行探测并推进两轮之间的 200ms 间隔 */
+async function runProbe(promise: Promise<boolean>) {
+    await vi.advanceTimersByTimeAsync(400)
+    return promise
+}
 
 describe('performanceCheckerIsOpen', () => {
     beforeEach(() => {
         vi.resetModules()
         vi.restoreAllMocks()
+        vi.useFakeTimers()
     })
 
-    it('table 打印耗时 <= 0 时返回 false（性能 API 不可用场景）', async () => {
+    it('两轮探测均满足（被 hook 阈值 floor 50 / ratio 20）才返回 true', async () => {
         silence()
-        // calcTablePrintTime: start=100, end=100 -> duration 0
-        vi.spyOn(performance, 'now')
-            .mockReturnValueOnce(100)
-            .mockReturnValueOnce(100)
-            .mockReturnValueOnce(0)
-            .mockReturnValueOnce(0)
+        perfQueue([
+            [60, 1],
+            [60, 1],
+        ])
         const { performanceCheckerIsOpen } = await load()
-        expect(performanceCheckerIsOpen()).toBe(false)
+        expect(await runProbe(performanceCheckerIsOpen())).toBe(true)
     })
 
-    it('log 打印耗时 <= 0 时返回 false', async () => {
+    it('首轮不满足立即返回 false（不再进行第二轮）', async () => {
         silence()
-        // table: 10->15 (5ms)；log: 20->20 (0ms)
-        vi.spyOn(performance, 'now')
-            .mockReturnValueOnce(10)
-            .mockReturnValueOnce(15)
-            .mockReturnValueOnce(20)
-            .mockReturnValueOnce(20)
+        const nowSpy = perfQueue([
+            [30, 1], // table 30 <= 50
+        ])
         const { performanceCheckerIsOpen } = await load()
-        expect(performanceCheckerIsOpen()).toBe(false)
+        expect(await runProbe(performanceCheckerIsOpen())).toBe(false)
+        // 仅消耗首轮 4 次
+        expect(nowSpy.mock.calls.length).toBe(4)
     })
 
-    it('table 耗时超过 log 最大耗时的 10 倍时返回 true', async () => {
+    it('首轮满足、次轮不满足返回 false', async () => {
         silence()
-        // table: 0->11 (11ms)；log: 100->101 (1ms)；11 > 1*10
-        vi.spyOn(performance, 'now')
-            .mockReturnValueOnce(0)
-            .mockReturnValueOnce(11)
-            .mockReturnValueOnce(100)
-            .mockReturnValueOnce(101)
+        perfQueue([
+            [60, 1],
+            [30, 1],
+        ])
         const { performanceCheckerIsOpen } = await load()
-        expect(performanceCheckerIsOpen()).toBe(true)
+        expect(await runProbe(performanceCheckerIsOpen())).toBe(false)
     })
 
-    it('table 耗时未超过 10 倍时返回 false', async () => {
+    it('table 未超过 log 基线的比值阈值时返回 false', async () => {
         silence()
-        // table: 0->5 (5ms)；log: 100->101 (1ms)；5 < 10
-        vi.spyOn(performance, 'now')
-            .mockReturnValueOnce(0)
-            .mockReturnValueOnce(5)
-            .mockReturnValueOnce(100)
-            .mockReturnValueOnce(101)
+        perfQueue([
+            [60, 4], // 60 <= 4 * 20 = 80
+            [60, 4],
+        ])
         const { performanceCheckerIsOpen } = await load()
-        expect(performanceCheckerIsOpen()).toBe(false)
+        expect(await runProbe(performanceCheckerIsOpen())).toBe(false)
     })
 
-    it('hideLog 为 true 时调用 console.clear', async () => {
+    it('原生 console 使用更低的阈值（floor 10 / ratio 10）', async () => {
+        makeNative()
+        const clear = vi.spyOn(console, 'clear').mockImplementation(() => {})
+        perfQueue([
+            [20, 1],
+            [20, 1],
+        ])
+        const { performanceCheckerIsOpen } = await load()
+        expect(await runProbe(performanceCheckerIsOpen())).toBe(true)
+        expect(clear).toHaveBeenCalled()
+    })
+
+    it('hideLog 为 false 时不清理控制台', async () => {
         silence()
         const clear = vi.spyOn(console, 'clear').mockImplementation(() => {})
-        vi.spyOn(performance, 'now')
-            .mockReturnValueOnce(0)
-            .mockReturnValueOnce(5)
-            .mockReturnValueOnce(100)
-            .mockReturnValueOnce(101)
+        perfQueue([
+            [30, 1],
+            [30, 1],
+        ])
         const { performanceCheckerIsOpen } = await load()
-        performanceCheckerIsOpen(true)
-        expect(clear).toHaveBeenCalledTimes(1)
-    })
-
-    it('hideLog 为 false 时保留控制台输出', async () => {
-        silence()
-        const clear = vi.spyOn(console, 'clear').mockImplementation(() => {})
-        vi.spyOn(performance, 'now')
-            .mockReturnValueOnce(0)
-            .mockReturnValueOnce(5)
-            .mockReturnValueOnce(100)
-            .mockReturnValueOnce(101)
-        const { performanceCheckerIsOpen } = await load()
-        performanceCheckerIsOpen(false)
+        expect(await runProbe(performanceCheckerIsOpen(false))).toBe(false)
         expect(clear).not.toHaveBeenCalled()
     })
 })
