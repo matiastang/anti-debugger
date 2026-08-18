@@ -10,7 +10,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 -   没有测试框架；代码规范由 `eslint.config.mjs`（ESLint 9 flat config）+ `.prettierrc` 约束（4 空格缩进、无分号、单引号；package.json 例外为 2 空格）
 -   提交信息风格：`feat: - xxx` / `fix: - xxx`（见 git 历史）
 -   pre-commit 钩子（husky + lint-staged）对暂存文件自动跑 `prettier --write` + `eslint --fix`
--   GitHub Actions（`.github/workflows/ci.yml`）：push 到 main 或 PR 到 main 时跑 format:check / lint / typecheck / test / plugin:build + 独立 E2E job（xvfb 有头浏览器）
+-   GitHub Actions（`.github/workflows/ci.yml`）：push 到 main 或 PR 到 main 时跑 format:check / lint / typecheck / test / plugin:build + 独立 E2E job（xvfb 有头浏览器）。另有 `.github/workflows/release.yml`：push `v*` tag 时自动发布 npm（复用 ci.yml 作为可复用工作流）
 
 ## 常用命令
 
@@ -41,7 +41,10 @@ pnpm run ts:build
 pnpm run build
 ```
 
-发布到 npm（作者启用了 2FA，不能用自动发布命令）：
+发布到 npm（两种方式）：
+
+-   **tag 驱动自动发布（推荐）**：bump `package.json` 的 `version` → 提交合入 main → `git tag v0.x.y && git push origin v0.x.y`。Release workflow（`.github/workflows/release.yml`）自动执行：tag/版本一致性守卫 → 复用 ci.yml 的全套 check（workflow_call）→ `pnpm plugin:build` + `npm publish`。认证用 GitHub Secret `NPM_TOKEN`（npm Granular Access Token，仅授权本包读写，约 90 天过期需到 npmjs.com 轮换后更新 Secret），不绕过账号 2FA。
+-   **手动发布（CI 不可用时兜底）**：
 
 ```sh
 pnpm run plugin:build
