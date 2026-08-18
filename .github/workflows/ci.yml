@@ -1,0 +1,72 @@
+# 校验流水线：提交(push)到 main 或 PR 合并到 main 时触发；
+# 另可作为可复用工作流被 release.yml 调用（发布前的质量门禁）
+name: CI
+
+on:
+    push:
+        branches: [main]
+    pull_request:
+        branches: [main]
+    workflow_call:
+
+jobs:
+    check:
+        name: Lint / Typecheck / Test / Build
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            # 版本号读取 package.json 的 packageManager 字段
+            - name: Install pnpm
+              uses: pnpm/action-setup@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 22
+                  cache: pnpm
+
+            - name: Install dependencies
+              run: pnpm install --frozen-lockfile
+
+            - name: Format check
+              run: pnpm format:check
+
+            - name: Lint
+              run: pnpm lint
+
+            - name: Typecheck
+              run: pnpm typecheck && pnpm typecheck:e2e
+
+            - name: Test
+              run: pnpm test
+
+            - name: Build
+              run: pnpm plugin:build
+
+    e2e:
+        name: E2E (real DevTools)
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Install pnpm
+              uses: pnpm/action-setup@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 22
+                  cache: pnpm
+
+            - name: Install dependencies
+              run: pnpm install --frozen-lockfile
+
+            - name: Install Chromium
+              run: pnpm exec playwright install --with-deps chromium
+
+            # 有头浏览器（含真实 DevTools 窗口）需要虚拟显示
+            - name: Run E2E
+              run: xvfb-run --auto-servernum --server-args="-screen 0 1280x1024x24" pnpm test:e2e

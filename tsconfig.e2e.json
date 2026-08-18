@@ -1,0 +1,8 @@
+{
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+        // e2e 与工具链配置不依赖 src 的路径别名
+        "paths": {}
+    },
+    "include": ["e2e/**/*.ts", "playwright.config.ts", "vitest.config.ts"]
+}

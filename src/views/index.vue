@@ -15,7 +15,6 @@
 </template>
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { addListener, launch } from 'devtools-detector'
 
 const devtoolstatus = ref('NO')
 

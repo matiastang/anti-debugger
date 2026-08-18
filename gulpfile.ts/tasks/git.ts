@@ -22,7 +22,7 @@ const git_version = async function (cb: () => void) {
         ${commit}
         ${push}
     `,
-        (error, stdout, stderr) => {
+        (error, _stdout, _stderr) => {
             if (error) {
                 console.error(`git_version指令 exec error: ${error}`)
                 cb()
@@ -48,7 +48,7 @@ const git_first = async function (cb: () => void) {
         ${commit}
         ${push}
     `,
-        (error, stdout, stderr) => {
+        (error, _stdout, _stderr) => {
             if (error) {
                 console.error(`git_first指令 exec error: ${error}`)
                 cb()
@@ -81,7 +81,7 @@ const git_feat = async function (cb: () => void) {
         ${commit}
         ${push}
     `,
-        (error, stdout, stderr) => {
+        (error, _stdout, _stderr) => {
             if (error) {
                 console.error(`git_feat指令 exec error: ${error}`)
                 cb()
@@ -114,7 +114,7 @@ const git_fix = async function (cb: () => void) {
         ${commit}
         ${push}
     `,
-        (error, stdout, stderr) => {
+        (error, _stdout, _stderr) => {
             if (error) {
                 console.error(`git_fix指令 exec error: ${error}`)
                 cb()

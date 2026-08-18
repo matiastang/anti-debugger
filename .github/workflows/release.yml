@@ -1,0 +1,66 @@
+# 发布流水线：推送 v* 格式的 tag 时触发，自动校验 + 构建 + 发布到 npm
+# 约定：tag（去掉 v 前缀）必须与 package.json 的 version 一致，否则拒绝发布
+# 认证：GitHub Secret NPM_TOKEN（npm Granular Access Token，仅授权本包读写，不绕过账号 2FA）
+name: Release
+
+on:
+    push:
+        tags: ['v*']
+
+jobs:
+    # 轻量守卫 job：tag 与 package.json 版本不一致时立即失败，不浪费后续 check 的算力
+    verify-tag:
+        name: Verify tag / version
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Tag matches package.json version
+              run: |
+                  TAG_VERSION="${GITHUB_REF_NAME#v}"
+                  PKG_VERSION=$(node -p "require('./package.json').version")
+                  echo "tag: ${GITHUB_REF_NAME} / package.json: ${PKG_VERSION}"
+                  if [ "$TAG_VERSION" != "$PKG_VERSION" ]; then
+                      echo "::error::tag(${GITHUB_REF_NAME}) 与 package.json version(${PKG_VERSION}) 不一致，拒绝发布"
+                      exit 1
+                  fi
+
+    # 复用 CI 的全套质量门禁（lint / typecheck / test / e2e / build）
+    check:
+        name: Lint / Typecheck / Test / E2E / Build
+        needs: verify-tag
+        uses: ./.github/workflows/ci.yml
+
+    publish:
+        name: Publish to npm
+        needs: check
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            # 版本号读取 package.json 的 packageManager 字段
+            - name: Install pnpm
+              uses: pnpm/action-setup@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 22
+                  cache: pnpm
+                  # 写入 ~/.npmrc，发布时配合 NODE_AUTH_TOKEN 完成认证
+                  registry-url: https://registry.npmjs.org/
+
+            - name: Install dependencies
+              run: pnpm install --frozen-lockfile
+
+            - name: Build
+              run: pnpm plugin:build
+
+            - name: Publish
+              run: npm publish
+              env:
+                  NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+                  # npm publish 的 prepare 生命周期会执行 husky，CI 中跳过
+                  HUSKY: '0'
